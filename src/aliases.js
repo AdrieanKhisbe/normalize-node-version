@@ -2,20 +2,21 @@ import { promises as fs } from 'fs'
 import { version as processVersion, env as processEnv } from 'process'
 
 import findUp from 'find-up'
-import { coerce } from 'semver'
+import { coerce, rsort } from 'semver'
 
 export const NODE_VERSION_ALIAS = '.'
 export const NODE_VERSION_FILES = ['.node-version', '.nvmrc', '.naverc']
+export const NODE_LATEST_ALIASES = ['stable', 'node', 'latest']
 export const NODE_LTS_CODE_NAMES = [
-  'Argon',
-  'Boron',
-  'Carbon',
-  'Dubnium',
-  'Erbium',
-  'Fermium',
-  'Gallium',
-  'Hydrogen',
-  'Iron',
+  'argon',
+  'boron',
+  'carbon',
+  'dubnium',
+  'erbium',
+  'fermium',
+  'gallium',
+  'hydrogen',
+  'iron',
 ]
 // v4 to v20 LTS retrieved from https://github.com/nodejs/Release/blob/master/CODENAMES.md
 
@@ -28,18 +29,48 @@ export const getVersionFromFile = async (filePath) => {
   return fileContent.trim()
 }
 
-export const resolveNvmAlias = async ({ nvmDir, alias } = {}) => {
-  // !FIXME: special, node/stable -> latest
-  // !FIXME: lts shortname
-  // !FIXME: recursive alias [previousAliases arg?]
-  const aliasPath = `${nvmDir}/alias/${alias}`
-  if (
-    !(await fs.stat(aliasPath).catch((error) => {
-      if (error.code !== 'ENOENT') throw error
-    }))
-  )
-    throw new Error(`alias ${alias} does not exist`)
-  return getVersionFromFile(aliasPath)
+export const resolveNvmLatestNode = async ({ nvmDir }) => {
+  const nodeVersions = await fs.readdir(`${nvmDir}/versions/node`)
+  return rsort(nodeVersions)[0]
+}
+
+export const ensureAliasPath = async ({ nvmDir, alias }) => {
+  const aliasWithImplicitLts = NODE_LTS_CODE_NAMES.includes(alias)
+    ? `lts/${alias}`
+    : alias
+  const aliasPath = `${nvmDir}/alias/${aliasWithImplicitLts}`
+
+  await fs.stat(aliasPath).catch((error) => {
+    if (error.code === 'ENOENT')
+      throw new Error(`alias ${alias} does not exist`)
+    throw error
+  })
+
+  return aliasPath
+}
+
+export const resolveNvmAlias = async ({
+  nvmDir,
+  alias,
+  previousAliases = [],
+} = {}) => {
+  if (NODE_LATEST_ALIASES.includes(alias))
+    return resolveNvmLatestNode({ nvmDir })
+
+  if (previousAliases.includes(alias))
+    throw new Error(
+      `Nvm alias cycle detected ${previousAliases.join(' -> ')} -> ${alias}`,
+    )
+  const aliasPath = await ensureAliasPath({ nvmDir, alias })
+
+  const resolvedVersion = await getVersionFromFile(aliasPath)
+  if (coerce(resolvedVersion)) return resolvedVersion
+
+  return resolveNvmAlias({
+    nvmDir,
+    alias: resolvedVersion,
+    previousAliases: [...previousAliases, alias],
+  })
 }
 
 export const resolveNodeVersionAlias = async ({ cwd } = {}) => {
