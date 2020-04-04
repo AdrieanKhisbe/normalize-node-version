@@ -55,6 +55,36 @@ test('Resolve - current node pseudo version', async (t) => {
   t.is(versionRange, versions.node, 'current version not resolved correctly')
 })
 
+test("Resolve nvm alias 'default' ", async (t) => {
+  const versionRange = await resolveVersionRangeAlias('default', {
+    env: { NVM_DIR: `${__dirname}/fixtures/nvm-dir` },
+  })
+  t.is(versionRange, '10.10', 'not nvm default alias')
+})
+
+test("Resolve nvm alias 'personal-alias' ", async (t) => {
+  const versionRange = await resolveVersionRangeAlias('personal-alias', {
+    env: { NVM_DIR: `${__dirname}/fixtures/nvm-dir` },
+  })
+  t.is(versionRange, '12.12', 'not resolved to default node-alias')
+})
+
+test("Fail to resolve missing nvm alias 'awol' ", async (t) => {
+  await t.throwsAsync(() =>
+    resolveVersionRangeAlias('awol', {
+      env: { NVM_DIR: `${__dirname}/fixtures/nvm-dir` },
+    }),
+  )
+})
+
+test('Pass out versionRange if no NVM_DIR configured', async (t) => {
+  const versionRange = await resolveVersionRangeAlias('awol', {
+    // Force shadowing of tester NVM_DIR if he a nvm user
+    env: { NVM_DIR: '' },
+  })
+  t.is(versionRange, 'awol', 'version range was not preserved')
+})
+
 test('Transfer node version that are not aliased [fully resolved]', async (t) => {
   const versionRange = await resolveVersionRangeAlias('v12.12.0')
 
