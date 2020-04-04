@@ -7,11 +7,12 @@ import { handleOfflineError } from './offline.js'
 
 // Retrieve the Node version matching a specific `versionRange`
 const normalizeNodeVersion = async function (versionRange, opts) {
-  const resolvedVersionRange = await resolveVersionRangeAlias(
-    versionRange,
-    opts,
-  )
-  const versions = await getVersions(resolvedVersionRange, opts)
+  const { nvmDir, cwd, ...versionsOpts } = opts || {}
+  const resolvedVersionRange = await resolveVersionRangeAlias(versionRange, {
+    nvmDir,
+    cwd,
+  })
+  const versions = await getVersions(resolvedVersionRange, versionsOpts)
 
   const version = maxSatisfying(versions, resolvedVersionRange)
 

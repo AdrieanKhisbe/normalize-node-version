@@ -26,6 +26,7 @@ await normalizeNodeVersion('<7') // '6.17.1'
 await normalizeNodeVersion('*') // Latest Node version, e.g. '12.8.0'
 await normalizeNodeVersion('_') // Node version used by current process
 await normalizeNodeVersion('.') // Node version from a '.nvmrc', '.node-version' or '.naverc' file in the current directory or any parent directory
+await normalizeNodeVersion('default') // Nvm default version if available
 await normalizeNodeVersion('not_a_version') // Error: Invalid Node version
 
 // All available options
@@ -77,6 +78,14 @@ _Default_: `process.cwd()`
 Folder to consider to start look for a node version file when using the `.`
 alias (`.node-version`, `.nvmrc` or `.naverc`).
 
+#### nvmDir
+
+_Type_: `string`\
+_Default_: `process.env.NVM_DIR`
+
+Override to specify what path to consider for Nvm directory. Defaults to content
+of `NVM_DIR` env variable that nvm makes point to the `.nvm` directory
+
 ### Supported aliases
 
 `normalizeNodeVersion` supports some Node version aliases you can use as
@@ -86,6 +95,15 @@ alias (`.node-version`, `.nvmrc` or `.naverc`).
 - `.` : Node version from a `.nvmrc`, `.node-version` or `.naverc` file in the
   current directory or any parent directory. If no version file is found, it
   will default to the current process version.
+- **nvm aliases**: if nvm available:
+
+  - `stable`, `node`: latest nvm node installed
+  - `default`: user default alias
+  - **`lts/*`** ones: `tls/*`, `lts/argon`, `lts/carbon`, `lts/erbium`...
+
+  `lts/` can be omitted asimplicit
+
+  - any alias user would have defined
 
 # See also
 

@@ -4,7 +4,7 @@ import normalizeNodeVersion from '../src/main.js'
 
 const resolveWithNvm = (versionRange) =>
   normalizeNodeVersion(versionRange, {
-    env: { NVM_DIR: `${__dirname}/fixtures/nvm-dir` },
+    nvmDir: `${__dirname}/fixtures/nvm-dir`,
   })
 
 test("Resolve nvm alias 'default'", async (t) => {
@@ -43,6 +43,16 @@ test('Fail to resolve nvm alias if cycle exist', async (t) => {
   await t.throwsAsync(() => resolveWithNvm('cycle'), {
     message: 'Nvm alias cycle detected cycle -> ping -> pong -> ping',
   })
+})
+
+test('Fails if nvm default alias', async (t) => {
+  await t.throwsAsync(
+    () =>
+      normalizeNodeVersion('default', {
+        nvmDir: '',
+      }),
+    { message: 'Invalid Node version: default' },
+  )
 })
 
 test("Fail to resolve missing nvm alias 'awol' ", async (t) => {

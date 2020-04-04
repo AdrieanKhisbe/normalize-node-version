@@ -78,16 +78,11 @@ export const resolveNodeVersionAlias = async ({ cwd } = {}) => {
   return getVersionFromFile(nodeVersionFile)
 }
 
-// NVM_DIR tell if installed
-// stable: latest in versions/node (maybe chomped to minor)
-// aliases: in the alias folder, lts/ in it
-// Need recursion to resolve
-
-// ! FIXME
+// ! FIXME: help, I don't see an elegant way not to comply the complexity 4 rule
 // eslint-disable-next-line complexity
 export const resolveVersionRangeAlias = async function (
   versionRange,
-  { cwd, env = processEnv } = {},
+  { cwd, env = processEnv, nvmDir } = {},
 ) {
   if (versionRange === CURRENT_NODE_ALIAS) return processVersion
 
@@ -99,9 +94,11 @@ export const resolveVersionRangeAlias = async function (
 
   if (coerce(versionRange)) return versionRange
 
-  // try to resolve alias
-  if (env.NVM_DIR) {
-    return resolveNvmAlias({ alias: versionRange, nvmDir: env.NVM_DIR })
+  const effectiveNvmDir = nvmDir === undefined ? env.NVM_DIR : nvmDir
+
+  // try to resolve alias of nvm dir specified or present
+  if (effectiveNvmDir) {
+    return resolveNvmAlias({ alias: versionRange, nvmDir: effectiveNvmDir })
   }
 
   return versionRange
